@@ -706,6 +706,128 @@ pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth_raw)
   return (true);
 }
 
+bool
+pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth_raw,
+					     const Matrix3frm& current_global_rotation,
+					     const Vector3d& current_global_translation)
+{ 
+  // Intrisics of the camera
+  Intr intr (fx_, fy_, cx_, cy_);
+  
+  // Physical volume size (meters)
+  float3 device_volume_size = device_cast<const float3> (tsdf_volume_->getSize());
+  
+  // process the incoming raw depth map
+  prepareMaps (depth_raw, intr);
+  
+  // sync GPU device
+  pcl::device::kinfuLS::sync ();
+  
+  ///////////////////////////////////////////////////////////////////////////////////////////
+  // Initialization at first frame
+  if (global_time_ == 0) // this is the first frame, the tsdf volume needs to be initialized
+  {  
+    // Initial rotation
+    Matrix3frm initial_cam_rot = rmats_[0]; //  [Ri|ti] - pos of camera
+    Matrix3frm initial_cam_rot_inv = initial_cam_rot.inverse ();
+    // Initial translation
+    Vector3f   initial_cam_trans = tvecs_[0]; //  transform from camera to global coo space for (i-1)th camera pose
+    
+    // Convert pose to device types
+    Mat33 device_initial_cam_rot, device_initial_cam_rot_inv;
+    float3 device_initial_cam_trans;
+    convertTransforms (initial_cam_rot, initial_cam_rot_inv, initial_cam_trans, device_initial_cam_rot, device_initial_cam_rot_inv, device_initial_cam_trans);
+
+    // integrate current depth map into tsdf volume, from default initial pose.
+    integrateTsdfVolume(depth_raw, intr, device_volume_size, device_initial_cam_rot_inv, device_initial_cam_trans, tsdf_volume_->getTsdfTruncDist(), tsdf_volume_->data(), getCyclicalBufferStructure (), depthRawScaled_);
+    
+    // transform vertex and normal maps for each pyramid level
+    for (int i = 0; i < LEVELS; ++i)
+      transformMaps (vmaps_curr_[i], nmaps_curr_[i], device_initial_cam_rot, device_initial_cam_trans, vmaps_g_prev_[i], nmaps_g_prev_[i]);
+
+    if(perform_last_scan_)
+      finished_ = true;
+      
+    ++global_time_;
+    
+    // save current vertex and normal maps
+    saveCurrentMaps ();    
+    // return and wait for next frame
+    return (false);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////
+  // Get the last-known pose
+  Matrix3frm last_known_global_rotation = rmats_[global_time_ - 1];            // [Ri|ti] - pos of camera, i.e.
+  Vector3f   last_known_global_translation = tvecs_[global_time_ - 1];          // transform from camera to global coo space for (i-1)th camera pose
+
+  rmats_.push_back (current_global_rotation); 
+  tvecs_.push_back (current_global_translation);
+  // Update last estimated pose to current pairwise ICP result
+  last_estimated_translation_ = current_global_translation;
+  last_estimated_rotation_ = current_global_rotation;
+
+  ///////////////////////////////////////////////////////////////////////////////////////////  
+  // check if we need to shift
+  has_shifted_ = cyclical_.checkForShift(tsdf_volume_, getCameraPose (), 0.6 * volume_size_, true, perform_last_scan_); // TODO make target distance from camera a param
+  if(has_shifted_)
+    PCL_WARN ("SHIFTING\n");
+  
+  ///////////////////////////////////////////////////////////////////////////////////////////
+  // get the NEW local pose as device types
+  Mat33  device_current_rotation_inv, device_current_rotation;   
+  float3 device_current_translation_local;   
+  Matrix3frm cam_rot_local_curr_inv = current_global_rotation.inverse (); //rotation (local = global)
+  convertTransforms(cam_rot_local_curr_inv, current_global_rotation, current_global_translation, device_current_rotation_inv, device_current_rotation, device_current_translation_local); 
+  device_current_translation_local -= getCyclicalBufferStructure()->origin_metric;   // translation (local translation = global translation - origin of cube)
+  
+  ///////////////////////////////////////////////////////////////////////////////////////////
+  // Integration check - We do not integrate volume if camera does not move far enough.  
+  {
+    float rnorm = rodrigues2(current_global_rotation.inverse() * last_known_global_rotation).norm();
+    float tnorm = (current_global_translation - last_known_global_translation).norm();    
+    const float alpha = 1.f;
+    bool integrate = (rnorm + alpha * tnorm)/2 >= integration_metric_threshold_;
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    // Volume integration  
+    if (integrate)
+    {
+      integrateTsdfVolume (depth_raw, intr, device_volume_size, device_current_rotation_inv, device_current_translation_local, tsdf_volume_->getTsdfTruncDist (), tsdf_volume_->data (), getCyclicalBufferStructure (), depthRawScaled_);
+    }
+  }
+  
+  ///////////////////////////////////////////////////////////////////////////////////////////
+  // Ray casting
+  {          
+    // generate synthetic vertex and normal maps from newly-found pose.
+    raycast (intr, device_current_rotation, device_current_translation_local, tsdf_volume_->getTsdfTruncDist (), device_volume_size, tsdf_volume_->data (), getCyclicalBufferStructure (), vmaps_g_prev_[0], nmaps_g_prev_[0]);
+    
+    // POST-PROCESSING: We need to transform the newly raycasted maps into the global space.
+    Mat33&  rotation_id = device_cast<Mat33> (rmats_[0]); /// Identity Rotation Matrix. Because we never rotate our volume
+    float3 cube_origin = (getCyclicalBufferStructure ())->origin_metric;
+    MapArr& vmap_temp = vmaps_g_prev_[0];
+    MapArr& nmap_temp = nmaps_g_prev_[0];
+    transformMaps (vmap_temp, nmap_temp, rotation_id, cube_origin, vmaps_g_prev_[0], nmaps_g_prev_[0]);
+    
+    // create pyramid levels for vertex and normal maps
+    for (int i = 1; i < LEVELS; ++i)
+    {
+      resizeVMap (vmaps_g_prev_[i-1], vmaps_g_prev_[i]);
+      resizeNMap (nmaps_g_prev_[i-1], nmaps_g_prev_[i]);
+    }
+    pcl::device::kinfuLS::sync ();
+  }
+
+  if(has_shifted_ && perform_last_scan_)
+    extractAndSaveWorld ();
+
+    
+  ++global_time_;
+  // save current vertex and normal maps
+  saveCurrentMaps ();
+  return (true);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Eigen::Affine3f
 pcl::gpu::kinfuLS::KinfuTracker::getCameraPose (int time) const
@@ -812,6 +934,32 @@ bool
 pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth, const View& colors)
 { 
   bool res = (*this)(depth);
+
+  if (res && color_volume_)
+  {
+    const float3 device_volume_size = device_cast<const float3> (tsdf_volume_->getSize());
+    Intr intr(fx_, fy_, cx_, cy_);
+
+    Matrix3frm R_inv = rmats_.back().inverse();
+    Vector3f   t     = tvecs_.back();
+    
+    Mat33&  device_Rcurr_inv = device_cast<Mat33> (R_inv);
+    float3& device_tcurr = device_cast<float3> (t);
+    
+    updateColorVolume(intr, tsdf_volume_->getTsdfTruncDist(), device_Rcurr_inv, device_tcurr, vmaps_g_prev_[0], 
+        colors, device_volume_size, color_volume_->data(), color_volume_->getMaxWeight());
+  }
+
+  return res;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool 
+pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth, const View& colors,
+					     const Matrix3frm& current_global_rotation,
+					     const Vector3f& current_global_translation)
+{ 
+  bool res = (*this)(depth, corrent_global_rotation, current_global_translation);
 
   if (res && color_volume_)
   {
