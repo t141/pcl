@@ -81,7 +81,7 @@ namespace pcl
             cudaSafeCall (cudaDeviceSynchronize ());
         }
 
-        using copy_fields_t = void (*)(int info[4], int size, const void* input, void* output);
+        typedef void (*copy_fields_t)(int info[4], int size, const void* input, void* output);
     }
 }
 
