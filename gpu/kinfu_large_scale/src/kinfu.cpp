@@ -709,7 +709,7 @@ pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth_raw)
 bool
 pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth_raw,
 					     const Matrix3frm& current_global_rotation,
-					     const Vector3d& current_global_translation)
+					     const Vector3f& current_global_translation)
 { 
   // Intrisics of the camera
   Intr intr (fx_, fy_, cx_, cy_);
