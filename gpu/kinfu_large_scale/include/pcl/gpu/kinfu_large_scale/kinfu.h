@@ -58,6 +58,10 @@
 #include <pcl/gpu/kinfu_large_scale/cyclical_buffer.h>
 //#include <pcl/gpu/kinfu_large_scale/standalone_marching_cubes.h>
 
+#define PCL_MAKE_ALIGNED_OPERATOR_NEW \
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW \
+  using _custom_allocator_type_trait = void;
+
 namespace pcl
 {
   namespace gpu
