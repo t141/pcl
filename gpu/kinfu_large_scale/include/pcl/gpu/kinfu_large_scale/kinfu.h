@@ -287,8 +287,14 @@ namespace pcl
             * \param[out] translationOut2 result of second translation conversion
             */
           inline void 
-          convertTransforms (Matrix3frm& transform_in_1, Matrix3frm& transform_in_2, Eigen::Vector3f& translation_in_1, Eigen::Vector3f& translation_in_2,
-                                         pcl::device::kinfuLS::Mat33& transform_out_1, pcl::device::kinfuLS::Mat33& transform_out_2, float3& translation_out_1, float3& translation_out_2);
+          convertTransforms (const Matrix3frm& transform_in_1,
+			     const Matrix3frm& transform_in_2,
+			     const Eigen::Vector3f& translation_in_1,
+			     const Eigen::Vector3f& translation_in_2,
+			     pcl::device::kinfuLS::Mat33& transform_out_1,
+			     pcl::device::kinfuLS::Mat33& transform_out_2,
+			     float3& translation_out_1,
+			     float3& translation_out_2);
           
           /** \brief helper function that converts transforms from host to device types
             * \param[in] transformIn1 first transform to convert
@@ -299,8 +305,12 @@ namespace pcl
             * \param[out] translationOut result of translation conversion
             */
           inline void 
-          convertTransforms (Matrix3frm& transform_in_1, Matrix3frm& transform_in_2, Eigen::Vector3f& translation_in,
-                                         pcl::device::kinfuLS::Mat33& transform_out_1, pcl::device::kinfuLS::Mat33& transform_out_2, float3& translation_out);
+          convertTransforms (const Matrix3frm& transform_in_1,
+			     const Matrix3frm& transform_in_2,
+			     const Eigen::Vector3f& translation_in,
+			     pcl::device::kinfuLS::Mat33& transform_out_1,
+			     pcl::device::kinfuLS::Mat33& transform_out_2,
+			     float3& translation_out);
           
           /** \brief helper function that converts transforms from host to device types
             * \param[in] transformIn transform to convert
