@@ -294,7 +294,7 @@ namespace pcl
 			     pcl::device::kinfuLS::Mat33& transform_out_1,
 			     pcl::device::kinfuLS::Mat33& transform_out_2,
 			     float3& translation_out_1,
-			     float3& translation_out_2);
+			     float3& translation_out_2) const;
           
           /** \brief helper function that converts transforms from host to device types
             * \param[in] transformIn1 first transform to convert
@@ -310,7 +310,7 @@ namespace pcl
 			     const Eigen::Vector3f& translation_in,
 			     pcl::device::kinfuLS::Mat33& transform_out_1,
 			     pcl::device::kinfuLS::Mat33& transform_out_2,
-			     float3& translation_out);
+			     float3& translation_out) const;
           
           /** \brief helper function that converts transforms from host to device types
             * \param[in] transformIn transform to convert
@@ -319,8 +319,10 @@ namespace pcl
             * \param[out] translationOut result of translation conversion
             */
           inline void 
-          convertTransforms (Matrix3frm& transform_in, Eigen::Vector3f& translation_in,
-                                         pcl::device::kinfuLS::Mat33& transform_out, float3& translation_out);
+          convertTransforms (const Matrix3frm& transform_in,
+			     const Eigen::Vector3f& translation_in,
+			     pcl::device::kinfuLS::Mat33& transform_out,
+			     float3& translation_out) const;
           
           /** \brief helper function that pre-process a raw detph map the kinect fusion algorithm.
             * The raw depth map is first blurred, eventually truncated, and downsampled for each pyramid level.

@@ -303,7 +303,7 @@ pcl::gpu::kinfuLS::KinfuTracker::convertTransforms (
   const Vector3f& translation_in_1, const Vector3f& translation_in_2,
   Mat33& rotation_out_1, Mat33& rotation_out_2,
   float3& translation_out_1, float3& translation_out_2
-)
+) const
 {
   rotation_out_1 = device_cast<Mat33> (rotation_in_1);
   rotation_out_2 = device_cast<Mat33> (rotation_in_2);
@@ -317,7 +317,7 @@ pcl::gpu::kinfuLS::KinfuTracker::convertTransforms (
   const Vector3f& translation_in,
   Mat33& rotation_out_1, Mat33& rotation_out_2,
   float3& translation_out
-)
+) const
 {
   rotation_out_1 = device_cast<Mat33> (rotation_in_1);
   rotation_out_2 = device_cast<Mat33> (rotation_in_2);
@@ -325,7 +325,12 @@ pcl::gpu::kinfuLS::KinfuTracker::convertTransforms (
 }
 
 inline void 
-pcl::gpu::kinfuLS::KinfuTracker::convertTransforms (Matrix3frm& rotation_in, Vector3f& translation_in, Mat33& rotation_out, float3& translation_out)
+pcl::gpu::kinfuLS::KinfuTracker::convertTransforms (
+  const Matrix3frm& rotation_in,
+  const Vector3f& translation_in,
+  Mat33& rotation_out,
+  float3& translation_out
+) const
 {
   rotation_out = device_cast<Mat33> (rotation_in);  
   translation_out = device_cast<float3>(translation_in);
