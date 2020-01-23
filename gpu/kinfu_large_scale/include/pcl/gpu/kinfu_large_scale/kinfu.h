@@ -84,6 +84,10 @@ namespace pcl
           using PointType = pcl::PointXYZ;
           using NormalType = pcl::Normal;
 
+	  using Matrix3frm = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>;
+          using Vector3f = Eigen::Vector3f;
+
+
           void 
           performLastScan (){perform_last_scan_ = true; PCL_WARN ("Kinfu will exit after next shift\n");}
           
@@ -164,12 +168,12 @@ namespace pcl
 
 	  bool operator() (const DepthMap& depth,
 			   const Matrix3frm& current_global_rotation,
-			   const Eigen::Vector3f& current_global_translation);
+			   const Vector3f& current_global_translation);
 
 	  bool operator() (const DepthMap& depth,
 			   const View& colors,
 			   const Matrix3frm& current_global_rotation,
-			   const Eigen::Vector3f& current_global_translation);
+			   const Vector3f& current_global_translation);
 	  
           /** \brief Returns camera pose at given time, default the last pose
             * \param[in] time Index of frame for which camera pose is returned.
@@ -271,10 +275,7 @@ namespace pcl
 
           /** \brief Vertex or Normal Map type */
           using MapArr = DeviceArray2D<float>;
-          
-          using Matrix3frm = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>;
-          using Vector3f = Eigen::Vector3f;
-          
+                    
           /** \brief helper function that converts transforms from host to device types
             * \param[in] transformIn1 first transform to convert
             * \param[in] transformIn2 second transform to convert
