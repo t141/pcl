@@ -295,6 +295,15 @@ namespace pcl
 			     pcl::device::kinfuLS::Mat33& transform_out_2,
 			     float3& translation_out_1,
 			     float3& translation_out_2) const;
+	  inline void 
+          convertTransforms (Matrix3frm& transform_in_1,
+			     Matrix3frm& transform_in_2,
+			     Eigen::Vector3f& translation_in_1,
+			     Eigen::Vector3f& translation_in_2,
+			     pcl::device::kinfuLS::Mat33& transform_out_1,
+			     pcl::device::kinfuLS::Mat33& transform_out_2,
+			     float3& translation_out_1,
+			     float3& translation_out_2);
           
           /** \brief helper function that converts transforms from host to device types
             * \param[in] transformIn1 first transform to convert
@@ -311,6 +320,13 @@ namespace pcl
 			     pcl::device::kinfuLS::Mat33& transform_out_1,
 			     pcl::device::kinfuLS::Mat33& transform_out_2,
 			     float3& translation_out) const;
+	  inline void 
+          convertTransforms (Matrix3frm& transform_in_1,
+			     Matrix3frm& transform_in_2,
+			     Eigen::Vector3f& translation_in,
+			     pcl::device::kinfuLS::Mat33& transform_out_1,
+			     pcl::device::kinfuLS::Mat33& transform_out_2,
+			     float3& translation_out);
           
           /** \brief helper function that converts transforms from host to device types
             * \param[in] transformIn transform to convert
@@ -323,6 +339,11 @@ namespace pcl
 			     const Eigen::Vector3f& translation_in,
 			     pcl::device::kinfuLS::Mat33& transform_out,
 			     float3& translation_out) const;
+	  inline void 
+          convertTransforms (Matrix3frm& transform_in,
+			     Eigen::Vector3f& translation_in,
+			     pcl::device::kinfuLS::Mat33& transform_out,
+			     float3& translation_out);
           
           /** \brief helper function that pre-process a raw detph map the kinect fusion algorithm.
             * The raw depth map is first blurred, eventually truncated, and downsampled for each pyramid level.
