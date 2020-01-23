@@ -412,7 +412,7 @@ namespace pcl
 
 
       template<class D, class Matx> D&
-      device_cast (const Matx& matx)
+      device_cast (Matx& matx)
       {
         return (*reinterpret_cast<D*>(matx.data ()));
       }

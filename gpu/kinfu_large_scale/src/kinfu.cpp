@@ -723,8 +723,8 @@ pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth_raw)
 
 bool
 pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth_raw,
-					     const Matrix3frm& current_global_rotation,
-					     const Vector3f& current_global_translation)
+					     Matrix3frm& current_global_rotation,
+					     Vector3f& current_global_translation)
 { 
   // Intrisics of the camera
   Intr intr (fx_, fy_, cx_, cy_);
@@ -970,9 +970,10 @@ pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth, const View& 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool 
-pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth, const View& colors,
-					     const Matrix3frm& current_global_rotation,
-					     const Vector3f& current_global_translation)
+pcl::gpu::kinfuLS::KinfuTracker::operator() (const DepthMap& depth,
+					     const View& colors,
+					     Matrix3frm& current_global_rotation,
+					     Vector3f& current_global_translation)
 { 
   bool res = (*this)(depth, current_global_rotation, current_global_translation);
 

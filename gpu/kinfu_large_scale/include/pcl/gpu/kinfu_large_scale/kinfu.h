@@ -167,13 +167,13 @@ namespace pcl
           bool operator() (const DepthMap& depth, const View& colors);
 
 	  bool operator() (const DepthMap& depth,
-			   const Matrix3frm& current_global_rotation,
-			   const Vector3f& current_global_translation);
+			   Matrix3frm& current_global_rotation,
+			   Vector3f& current_global_translation);
 
 	  bool operator() (const DepthMap& depth,
 			   const View& colors,
-			   const Matrix3frm& current_global_rotation,
-			   const Vector3f& current_global_translation);
+			   Matrix3frm& current_global_rotation,
+			   Vector3f& current_global_translation);
 	  
           /** \brief Returns camera pose at given time, default the last pose
             * \param[in] time Index of frame for which camera pose is returned.
